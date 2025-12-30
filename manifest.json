@@ -1,18 +1,21 @@
 {
+  "id": "/v2/",
   "name": "VAULT",
   "short_name": "VAULT",
-  "description": "Encrypted Media Vault",
-  "start_url": "/v2/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#0b0f1a",
   "theme_color": "#0b0f1a",
   "icons": [
     {
-      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAYAAADn9STfAAAACXBIWXMAAAsTAAALEwEAmpwYAAABMElEQVR4nO3TMQEAAAjDsM0/6WnBDySg7mS6ByYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgG8Bv88AAfD/X6MAAAAASUVORK5CYII=",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
+      "src": "https://cdn-icons-png.flaticon.com/512/2504/2504739.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2504/2504739.png",
+      "sizes": "192x192",
+      "type": "image/png"
     }
   ]
 }
