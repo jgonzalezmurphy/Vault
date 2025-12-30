@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <title>VAULT</title>
     
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22VAULT%22,%22short_name%22:%22VAULT%22,%22display%22:%22standalone%22,%22background_color%22:%22%230b0f1a%22,%22theme_color%22:%22%230b0f1a%22,%22icons%22:[{%22src%22:%22data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAYAAADn9STfAAAACXBIWXMAAAsTAAALEwEAmpwYAAABMElEQVR4nO3TMQEAAAjDsM0/6WnBDySg7mS6ByYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgG8Bv88AAfD/X6MAAAAASUVORK5CYII=%22,%22sizes%22:%22144x144%22,%22type%22:%22image/png%22,%22purpose%22:%22any%20maskable%22}]} ">
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22VAULT%22,%22short_name%22:%22VAULT%22,%22display%22:%22standalone%22,%22background_color%22:%22%230b0f1a%22,%22theme_color%22:%22%230b0f1a%22,%22icons%22:[{%22src%22:%22data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAYAAADn9STfAAAACXBIWXMAAAsTAAALEwEAmpwYAAABMElEQVR4nO3TMQEAAAjDsM0/6WnBDySg7mS6ByYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgG8Bv88AAfD/X6MAAAAASUVORK5CYII=%22,%22sizes%22:%22144x144%22,%22type%22:%22image/png%22,%22purpose%22:%22any%20maskable%22}],%22version%22:%223.0%22} ">
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230b0f1a'/%3E%3Cpath d='M30 30L50 70L70 30' stroke='%2338bdf8' stroke-width='12' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAYAAADn9STfAAAACXBIWXMAAAsTAAALEwEAmpwYAAABMElEQVR4nO3TMQEAAAjDsM0/6WnBDySg7mS6ByYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgG8Bv88AAfD/X6MAAAAASUVORK5CYII=">
+    
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
@@ -77,10 +78,6 @@
                 </div>
                 <button onclick="addItem()" class="bg-sky-600 hover:bg-sky-500 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.15em] transition-all active:scale-95 shadow-xl">Add Entry</button>
             </div>
-        </div>
-
-        <div class="flex justify-end mb-4">
-            <button onclick="toggleCompleted()" id="toggleBtn" class="text-slate-500 hover:text-slate-300 text-[10px] uppercase font-black tracking-widest">Show Done</button>
         </div>
 
         <div id="tables-container" class="space-y-20"></div>
@@ -224,7 +221,7 @@
             });
         }
 
-        function toggleCompleted() { showAll = !showAll; render(); document.getElementById('toggleBtn').innerText = showAll ? "Hide Done" : "Show Done"; }
+        function toggleCompleted() { showAll = !showAll; render(); }
         function downloadData() { const b = new Blob([JSON.stringify(items)], {type: "application/json"}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `vault.json`; a.click(); }
         syncFromCloud();
         render();
