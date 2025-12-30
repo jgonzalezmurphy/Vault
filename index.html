@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VAULT</title>
+    
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22VAULT%22,%22short_name%22:%22VAULT%22,%22display%22:%22standalone%22,%22background_color%22:%22%230b0f1a%22,%22theme_color%22:%22%230b0f1a%22,%22icons%22:[{%22src%22:%22data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAYAAADn9STfAAAACXBIWXMAAAsTAAALEwEAmpwYAAABMElEQVR4nO3TMQEAAAjDsM0/6WnBDySg7mS6ByYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgG8Bv88AAfD/X6MAAAAASUVORK5CYII=%22,%22sizes%22:%22144x144%22,%22type%22:%22image/png%22,%22purpose%22:%22any%20maskable%22}]} ">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230b0f1a'/%3E%3Cpath d='M30 30L50 70L70 30' stroke='%2338bdf8' stroke-width='12' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root { --bg: #0b0f1a; }
+        body { background-color: var(--bg) !important; color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; margin: 0; padding: 1rem; min-height: 100vh; padding-top: env(safe-area-inset-top); }
+        .cat-movie { border-left: 4px solid #ef4444; }
+        .cat-tv { border-left: 4px solid #10b981; }
+        .cat-vidya { border-left: 4px solid #f59e0b; }
+        .glow-1 { background: linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, #161b22 100%); }
+        .glow-2 { background: linear-gradient(90deg, rgba(251, 191, 36, 0.12) 0%, #161b22 100%); }
+        .glow-3 { background: linear-gradient(90deg, rgba(56, 189, 248, 0.1) 0%, #161b22 100%); }
+        .glow-4 { background: linear-gradient(90deg, rgba(100, 116, 139, 0.08) 0%, #161b22 100%); }
+        .priority-1 { color: #f87171; } 
+        .priority-2 { color: #fbbf24; } 
+        .priority-3 { color: #38bdf8; } 
+        .priority-4 { color: #64748b; } 
+        .status-todo { color: #94a3b8; border-color: #334155; }
+        .status-progress { color: #38bdf8; border-color: #0ea5e9; background: rgba(14, 165, 233, 0.1); }
+        .status-done { color: #475569; border-color: #1e293b; }
+        .glass { background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        input, select { outline: none !important; -webkit-appearance: none; }
+        .editable:focus { background: rgba(255,255,255,0.1); border-radius: 4px; padding: 0 4px; }
+        @keyframes pulse-glow { 0%, 100% { text-shadow: 0 0 5px rgba(56, 189, 248, 0.2); color: #fff; } 50% { text-shadow: 0 0 30px rgba(56, 189, 248, 1); color: #38bdf8; } }
+        .syncing #vault-logo { animation: pulse-glow 1s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+    <div class="max-w-3xl mx-auto pb-32" id="app-root">
+        <header class="mb-6 flex justify-between items-end">
+            <div>
+                <h1 id="vault-logo" class="text-3xl font-black text-white tracking-tighter italic">VAULT<span class="text-sky-500 font-light text-xl not-italic ml-1">Tracker</span></h1>
+                <p class="text-slate-600 text-[10px] uppercase tracking-[0.2em] font-bold">Encrypted Local Archive</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <div class="flex gap-2 items-center">
+                    <span id="syncStatus" class="text-[8px] font-bold text-slate-700 uppercase tracking-tighter mr-2">Local Only</span>
+                    <button onclick="setupCloud()" class="text-slate-500 hover:text-sky-400 text-[10px] uppercase font-bold p-1">Cloud</button>
+                    <button onclick="downloadData()" class="text-slate-500 hover:text-sky-400 text-[10px] uppercase font-bold p-1">Backup</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="mb-6">
+            <input type="text" id="searchInput" oninput="render()" placeholder="Search archives..." class="w-full bg-slate-900/50 border border-slate-800 p-3 rounded-xl text-sm text-slate-400 focus:border-sky-900 transition-all">
+        </div>
+
+        <div class="glass p-6 rounded-3xl shadow-2xl mb-12 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-600 to-transparent opacity-30"></div>
+            <div class="grid grid-cols-1 gap-5">
+                <input id="title" type="text" placeholder="Entry Title..." class="bg-black/40 border border-slate-800 p-5 rounded-2xl text-white placeholder-slate-700 shadow-inner text-lg w-full">
+                <div class="grid grid-cols-2 gap-4">
+                    <select id="category" class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-sm text-slate-300 font-bold">
+                        <option value="movie">🎥 Movie</option>
+                        <option value="tv">📺 TV Show</option>
+                        <option value="vidya" selected>🎮 Video Game</option>
+                    </select>
+                    <select id="priority" class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-sm text-slate-300 font-bold">
+                        <option value="1">Immediate</option>
+                        <option value="2">High</option>
+                        <option value="3">Medium</option>
+                        <option value="4">Low</option>
+                    </select>
+                </div>
+                <button onclick="addItem()" class="bg-sky-600 hover:bg-sky-500 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.15em] transition-all active:scale-95 shadow-xl">Add Entry</button>
+            </div>
+        </div>
+
+        <div class="flex justify-end mb-4">
+            <button onclick="toggleCompleted()" id="toggleBtn" class="text-slate-500 hover:text-slate-300 text-[10px] uppercase font-black tracking-widest">Show Done</button>
+        </div>
+
+        <div id="tables-container" class="space-y-20"></div>
+    </div>
+
+    <script>
+        const TMDB_KEY = "f8baa5b950fb92e47e7250e9faaa2a5c";
+        const RAWG_KEY = "599d140e70a649629b0a68848d53d262";
+        let items = JSON.parse(localStorage.getItem('media_v1')) || [];
+        let showAll = false;
+        let cloudConfig = JSON.parse(localStorage.getItem('vault_cloud')) || { token: '', gistId: '' };
+
+        const PRIORITY_LABELS = { 1: "Immediate", 2: "High", 3: "Medium", 4: "Low" };
+
+        function updateSyncStatus(text) {
+            document.getElementById('syncStatus').innerText = text;
+        }
+
+        async function save() { 
+            localStorage.setItem('media_v1', JSON.stringify(items)); 
+            render(); 
+            if (cloudConfig.token && cloudConfig.gistId) await syncToCloud();
+        }
+
+        async function setupCloud() {
+            const token = prompt("GitHub Token:", cloudConfig.token);
+            if (!token) return;
+            document.getElementById('app-root').classList.add('syncing');
+            try {
+                let gistId = cloudConfig.gistId;
+                const headers = { "Authorization": `token ${token}`, "Content-Type": "application/json" };
+                if (!gistId) {
+                    const res = await fetch("https://api.github.com/gists", {
+                        method: "POST",
+                        headers,
+                        body: JSON.stringify({ description: "VAULT Backup", public: false, files: { "vault.json": { content: JSON.stringify(items) } } })
+                    });
+                    const data = await res.json();
+                    gistId = data.id;
+                }
+                cloudConfig = { token, gistId };
+                localStorage.setItem('vault_cloud', JSON.stringify(cloudConfig));
+                await syncFromCloud();
+            } catch (e) { alert("Sync Error"); }
+            document.getElementById('app-root').classList.remove('syncing');
+        }
+
+        async function syncToCloud() {
+            updateSyncStatus("Uploading...");
+            try {
+                await fetch(`https://api.github.com/gists/${cloudConfig.gistId}`, {
+                    method: "PATCH",
+                    headers: { "Authorization": `token ${cloudConfig.token}` },
+                    body: JSON.stringify({ files: { "vault.json": { content: JSON.stringify(items) } } })
+                });
+                updateSyncStatus("Cloud Synced");
+            } catch (e) { updateSyncStatus("Offline"); }
+        }
+
+        async function syncFromCloud() {
+            if (!cloudConfig.token || !cloudConfig.gistId) return;
+            try {
+                const res = await fetch(`https://api.github.com/gists/${cloudConfig.gistId}`, {
+                    headers: { "Authorization": `token ${cloudConfig.token}` }
+                });
+                const data = await res.json();
+                if (data.files?.["vault.json"]) {
+                    items = JSON.parse(data.files["vault.json"].content);
+                    render();
+                }
+            } catch (e) { console.error(e); }
+        }
+        
+        async function addItem() {
+            const t = document.getElementById('title').value;
+            const c = document.getElementById('category').value;
+            const p = document.getElementById('priority').value;
+            if (!t) return;
+            const newItem = { id: Date.now(), title: t, category: c, priority: parseInt(p), status: 'to-do', runtime: 'N/A', score: 0, genre: '---', release: '---' };
+            items.push(newItem);
+            document.getElementById('title').value = '';
+            await fetchMetadata(newItem); 
+            await save();
+        }
+
+        async function fetchMetadata(item) {
+            document.getElementById('app-root').classList.add('syncing');
+            try {
+                if (item.category === 'vidya') {
+                    const r = await fetch(`https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(item.title)}&page_size=1`);
+                    const d = await r.json();
+                    if (d.results?.[0]) {
+                        const g = d.results[0];
+                        item.title = g.name;
+                        item.score = g.metacritic || (g.rating ? Math.round(g.rating * 20) : 0);
+                        item.release = g.released?.split('-')[0] || "---";
+                        item.genre = g.genres?.[0]?.name || "Game";
+                    }
+                } else {
+                    const r = await fetch(`https://api.themoviedb.org/3/search/${item.category}?api_key=${TMDB_KEY}&query=${encodeURIComponent(item.title)}`);
+                    const d = await r.json();
+                    if (d.results?.[0]) {
+                        const m = d.results[0];
+                        const detail = await (await fetch(`https://api.themoviedb.org/3/${item.category}/${m.id}?api_key=${TMDB_KEY}`)).json();
+                        item.title = detail.title || detail.name;
+                        item.release = (detail.release_date || detail.first_air_date || "").split('-')[0];
+                        item.score = Math.round(detail.vote_average * 10);
+                        item.genre = detail.genres?.[0]?.name || "---";
+                        item.runtime = item.category === 'movie' ? detail.runtime + "m" : (detail.number_of_episodes || "0") + " eps";
+                    }
+                }
+            } catch (e) { console.error(e); }
+            document.getElementById('app-root').classList.remove('syncing');
+        }
+
+        function updateField(id, field, value) {
+            const item = items.find(i => i.id === id);
+            if (item) {
+                item[field] = (field === 'score') ? parseInt(value) || 0 : value;
+                save();
+            }
+        }
+
+        function render() {
+            const container = document.getElementById('tables-container');
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            container.innerHTML = '';
+            const labels = { movie: 'CINEMA', tv: 'SERIES', vidya: 'GAMES' };
+            Object.entries(labels).forEach(([key, label]) => {
+                let list = items.filter(i => i.category === key);
+                if (!showAll) list = list.filter(i => i.status !== 'done');
+                if (query) list = list.filter(i => i.title.toLowerCase().includes(query));
+                list.sort((a, b) => a.priority - b.priority || b.score - a.score);
+                if (list.length === 0) return;
+                let h = `<section><div class="flex items-center gap-4 mb-8"><h2 class="text-[11px] font-black tracking-[0.4em] text-slate-700 italic">${label}</h2><div class="h-px flex-1 bg-gradient-to-r from-slate-900 to-transparent"></div></div><div class="space-y-6">`;
+                list.forEach(i => {
+                    const sC = i.status === 'in progress' ? 'status-progress' : (i.status === 'done' ? 'status-done' : 'status-todo');
+                    h += `<div class="cat-${i.category} glow-${i.priority} p-6 rounded-r-2xl shadow-lg ${i.status === 'done' ? 'opacity-40 grayscale' : ''}"><div class="flex justify-between items-center gap-4"><div class="flex-1"><h3 class="font-black text-slate-100 text-lg uppercase tracking-tight flex items-center gap-2"><span contenteditable="true" onblur="updateField(${i.id}, 'title', this.innerText)" class="editable">${i.title}</span><span class="text-[12px] text-slate-600 font-mono italic ml-auto">${i.release}</span></h3><div class="flex gap-4 mt-3 items-center"><span class="priority-${i.priority} text-[11px] uppercase font-black tracking-widest p-1">${PRIORITY_LABELS[i.priority]}</span><span class="text-[12px] text-slate-500 font-bold uppercase tracking-wider">${i.genre} • <span contenteditable="true" onblur="updateField(${i.id}, 'runtime', this.innerText)" class="editable">${i.runtime}</span></span></div></div><div class="text-right flex items-center gap-4"><span contenteditable="true" onblur="updateField(${i.id}, 'score', this.innerText)" class="font-mono font-black text-3xl tracking-tighter ${i.score >= 90 ? 'score-elite' : 'text-sky-500'}">${i.score || '0'}</span><div class="flex flex-col items-end gap-3"><select onchange="const x = items.find(z=>z.id===${i.id}); x.status=this.value; save();" class="${sC} bg-black/40 text-[11px] font-black uppercase p-3 rounded-xl border cursor-pointer"><option value="to-do" ${i.status==='to-do'?'selected':''}>To-Do</option><option value="in progress" ${i.status==='in progress'?'selected':''}>In Progress</option><option value="done" ${i.status==='done'?'selected':''}>Done</option></select><button onclick="if(confirm('Expunge?')) { items=items.filter(z=>z.id!==${i.id}); save(); }" class="text-slate-800 hover:text-red-500 text-[10px] font-bold uppercase p-1">Expunge</button></div></div></div></div>`;
+                });
+                container.innerHTML += h + `</div></section>`;
+            });
+        }
+
+        function toggleCompleted() { showAll = !showAll; render(); document.getElementById('toggleBtn').innerText = showAll ? "Hide Done" : "Show Done"; }
+        function downloadData() { const b = new Blob([JSON.stringify(items)], {type: "application/json"}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `vault.json`; a.click(); }
+        syncFromCloud();
+        render();
+    </script>
+</body>
+</html>
