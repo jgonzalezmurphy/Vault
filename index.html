@@ -35,7 +35,6 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(12px);
             overflow: hidden;
-            transition: all 0.3s ease;
             border-radius: 12px;
         }
 
@@ -63,20 +62,16 @@
         }
 
         .play-btn {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .play-btn svg { fill: rgba(255, 255, 255, 0.4); }
-
-        .status-todo { color: #ffffff !important; background: #1e293b; border-color: #475569; }
-        .status-progress { color: #38bdf8 !important; background: #0f172a; border-color: #38bdf8; }
-        .status-done { color: #64748b !important; background: #020617; border-color: #1e293b; }
+        .play-btn svg { fill: rgba(255, 255, 255, 0.3); }
 
         .glass { background: rgba(22, 27, 34, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         
@@ -136,11 +131,13 @@
             localStorage.setItem('media_v1', JSON.stringify(items)); 
             render(); 
             if (cloudConfig.token && cloudConfig.gistId) {
-                await fetch(`https://api.github.com/gists/${cloudConfig.gistId}`, { 
-                    method: "PATCH", 
-                    headers: { "Authorization": `token ${cloudConfig.token}` }, 
-                    body: JSON.stringify({ files: { "vault.json": { content: JSON.stringify(items) } } }) 
-                });
+                try {
+                    await fetch(`https://api.github.com/gists/${cloudConfig.gistId}`, { 
+                        method: "PATCH", 
+                        headers: { "Authorization": `token ${cloudConfig.token}` }, 
+                        body: JSON.stringify({ files: { "vault.json": { content: JSON.stringify(items) } } }) 
+                    });
+                } catch(e) {}
             }
         }
 
@@ -168,7 +165,7 @@
             document.getElementById('app-root').classList.add('syncing');
             try {
                 if (item.category === 'vidya') {
-                    // Stripped down fetch to bypass mobile CORS headers
+                    // Stripped down fetch to minimize mobile CORS interference
                     const r = await fetch(`https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(item.title)}&page_size=1`);
                     const rd = await r.json();
                     
@@ -178,14 +175,6 @@
                         item.score = g.metacritic || Math.round(g.rating * 20) || 0;
                         item.release = g.released?.split('-')[0] || "---";
                         item.genre = g.genres?.[0]?.name || "Game";
-                    } else {
-                        // Wikipedia fallback if RAWG fails
-                        const w = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(item.title.replace(/ /g, '_'))}`);
-                        const wd = await w.json();
-                        if (wd.title && wd.type !== "no-extract") {
-                            item.title = wd.title;
-                            item.genre = "Game";
-                        }
                     }
                 } else {
                     const r = await fetch(`https://api.themoviedb.org/3/search/${item.category}?api_key=${TMDB_KEY}&query=${encodeURIComponent(item.title)}`);
@@ -198,14 +187,19 @@
                         item.genre = item.category.toUpperCase();
                     }
                 }
-            } catch (e) { console.log("Metadata error"); }
+            } catch (e) { 
+                console.log("Fetch failed, item remains manual.");
+            }
             document.getElementById('app-root').classList.remove('syncing');
             render();
         }
 
         function updateField(id, field, value) {
             const item = items.find(i => i.id === id);
-            if (item) { item[field] = value; save(); }
+            if (item) { 
+                item[field] = (field === 'score') ? parseInt(value) || 0 : value; 
+                save(); 
+            }
         }
 
         function render() {
@@ -222,15 +216,18 @@
                 let h = `<section class="px-1"><h2 class="text-[10px] font-black tracking-widest text-white mb-4 uppercase opacity-50">${label}</h2><div class="space-y-4">`;
                 
                 list.forEach(i => {
-                    // Mobile-compatible YouTube search link
-                    const ytUrl = `https://m.youtube.com/results?search_query=${encodeURIComponent(i.title + ' ' + (key==='vidya'?'game':'') + ' official trailer')}`;
+                    // Mobile-compatible YouTube trigger
+                    const query = encodeURIComponent(i.title + " trailer");
+                    const ytUrl = `https://www.youtube.com/results?q=${query}`;
                     
                     h += `
                     <div class="media-card card-${key} priority-bg-${i.priority} p-4">
                         <div class="category-watermark">${key.toUpperCase()}</div>
                         <div class="flex justify-between items-start mb-1 relative z-10">
-                            <h3 class="font-black text-white text-base uppercase">${i.title}</h3>
-                            <span class="font-mono font-black text-xl text-sky-400">${i.score || '0'}</span>
+                            <h3 class="font-black text-white text-base uppercase">
+                                <span contenteditable="true" onblur="updateField(${i.id}, 'title', this.innerText)">${i.title}</span>
+                            </h3>
+                            <span class="font-mono font-black text-xl text-sky-400" contenteditable="true" onblur="updateField(${i.id}, 'score', this.innerText)">${i.score || '0'}</span>
                         </div>
                         <div class="flex items-center justify-between mb-4 relative z-10">
                             <span class="text-[10px] text-white/60 font-bold uppercase">${i.genre} • ${i.release}</span>
