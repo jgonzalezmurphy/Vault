@@ -25,16 +25,21 @@
         .glow-2 { background: linear-gradient(90deg, rgba(251, 191, 36, 0.12) 0%, #161b22 100%); }
         .glow-3 { background: linear-gradient(90deg, rgba(56, 189, 248, 0.1) 0%, #161b22 100%); }
         .glow-4 { background: linear-gradient(90deg, rgba(100, 116, 139, 0.08) 0%, #161b22 100%); }
-        .priority-1 { color: #fca5a5; } 
-        .priority-2 { color: #fcd34d; } 
-        .priority-3 { color: #7dd3fc; } 
-        .priority-4 { color: #94a3b8; } 
-        .status-todo { color: #cbd5e1; border-color: #475569; }
-        .status-progress { color: #38bdf8; border-color: #0ea5e9; background: rgba(14, 165, 233, 0.1); }
-        .status-done { color: #64748b; border-color: #334155; }
-        .glass { background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* High Contrast Priority Colors */
+        .priority-1 { color: #f87171; font-weight: 900; } 
+        .priority-2 { color: #fbbf24; font-weight: 800; } 
+        .priority-3 { color: #38bdf8; font-weight: 700; } 
+        .priority-4 { color: #94a3b8; font-weight: 600; } 
+
+        /* Status Dropdown High Contrast */
+        .status-todo { color: #000; background: #f8fafc; border-color: #fff; }
+        .status-progress { color: #000; background: #38bdf8; border-color: #fff; }
+        .status-done { color: #fff; background: #334155; border-color: #475569; }
+
+        .glass { background: rgba(22, 27, 34, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         input, select { outline: none !important; -webkit-appearance: none; }
-        .editable:focus { background: rgba(255,255,255,0.1); border-radius: 4px; padding: 0 4px; }
+        .editable:focus { background: rgba(255,255,255,0.15); border-radius: 4px; padding: 0 4px; }
         @keyframes pulse-glow { 0%, 100% { text-shadow: 0 0 5px rgba(56, 189, 248, 0.2); color: #fff; } 50% { text-shadow: 0 0 30px rgba(56, 189, 248, 1); color: #38bdf8; } }
         .syncing #vault-logo { animation: pulse-glow 1s ease-in-out infinite; }
     </style>
@@ -43,41 +48,40 @@
     <div class="max-w-3xl mx-auto pb-32" id="app-root">
         <header class="mb-6 flex justify-between items-end">
             <div>
-                <h1 id="vault-logo" class="text-3xl font-black text-white tracking-tighter italic">VAULT<span class="text-sky-500 font-light text-xl not-italic ml-1">Tracker</span></h1>
-                <p class="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold">Encrypted Local Archive</p>
+                <h1 id="vault-logo" class="text-3xl font-black text-white tracking-tighter italic">VAULT<span class="text-sky-400 font-light text-xl not-italic ml-1">Tracker</span></h1>
+                <p class="text-slate-300 text-[10px] uppercase tracking-[0.2em] font-bold">Encrypted Local Archive</p>
             </div>
             <div class="flex flex-col items-end gap-2">
                 <div class="flex gap-2 items-center">
-                    <span id="syncStatus" class="text-[8px] font-bold text-slate-500 uppercase tracking-tighter mr-2">Local Only</span>
-                    <button onclick="toggleCompleted()" id="historyToggle" class="text-slate-400 hover:text-sky-400 text-[10px] uppercase font-bold p-1">Show History</button>
-                    <button onclick="setupCloud()" class="text-slate-400 hover:text-sky-400 text-[10px] uppercase font-bold p-1">Cloud</button>
-                    <button onclick="downloadData()" class="text-slate-400 hover:text-sky-400 text-[10px] uppercase font-bold p-1">Backup</button>
+                    <span id="syncStatus" class="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-2">Local Only</span>
+                    <button onclick="toggleCompleted()" id="historyToggle" class="text-white bg-slate-800 hover:bg-slate-700 text-[10px] uppercase font-black px-3 py-1 rounded-full">History</button>
+                    <button onclick="setupCloud()" class="text-sky-400 hover:text-white text-[10px] uppercase font-black p-1">Cloud</button>
                 </div>
             </div>
         </header>
 
         <div class="mb-6">
-            <input type="text" id="searchInput" oninput="render()" placeholder="Search archives..." class="w-full bg-slate-900/50 border border-slate-700 p-3 rounded-xl text-sm text-slate-300 placeholder-slate-600 focus:border-sky-800 transition-all">
+            <input type="text" id="searchInput" oninput="render()" placeholder="Search archives..." class="w-full bg-slate-900 border-2 border-slate-700 p-4 rounded-xl text-base text-white placeholder-slate-500 focus:border-sky-500 transition-all">
         </div>
 
         <div class="glass p-6 rounded-3xl shadow-2xl mb-12 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-600 to-transparent opacity-30"></div>
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-500 to-transparent opacity-50"></div>
             <div class="grid grid-cols-1 gap-5">
-                <input id="title" type="text" placeholder="Entry Title..." class="bg-black/40 border border-slate-800 p-5 rounded-2xl text-white placeholder-slate-600 shadow-inner text-lg w-full">
+                <input id="title" type="text" placeholder="Entry Title..." class="bg-black/60 border border-slate-700 p-5 rounded-2xl text-white placeholder-slate-500 text-lg w-full">
                 <div class="grid grid-cols-2 gap-4">
-                    <select id="category" class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-sm text-slate-200 font-bold">
+                    <select id="category" class="bg-slate-800 border border-slate-600 p-4 rounded-2xl text-sm text-white font-black uppercase tracking-widest">
                         <option value="movie">🎥 Movie</option>
                         <option value="tv">📺 TV Show</option>
                         <option value="vidya" selected>🎮 Video Game</option>
                     </select>
-                    <select id="priority" class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-sm text-slate-200 font-bold">
+                    <select id="priority" class="bg-slate-800 border border-slate-600 p-4 rounded-2xl text-sm text-white font-black uppercase tracking-widest">
                         <option value="1">Immediate</option>
                         <option value="2">High</option>
                         <option value="3">Medium</option>
                         <option value="4">Low</option>
                     </select>
                 </div>
-                <button onclick="addItem()" class="bg-sky-600 hover:bg-sky-500 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.15em] transition-all active:scale-95 shadow-xl text-white">Add Entry</button>
+                <button onclick="addItem()" class="bg-sky-500 hover:bg-sky-400 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl text-white">Add Entry</button>
             </div>
         </div>
 
@@ -92,11 +96,7 @@
         let collapsedSections = JSON.parse(localStorage.getItem('vault_collapsed')) || {};
         let cloudConfig = JSON.parse(localStorage.getItem('vault_cloud')) || { token: '', gistId: '' };
 
-        const PRIORITY_LABELS = { 1: "Immediate", 2: "High", 3: "Medium", 4: "Low" };
-
-        function updateSyncStatus(text) {
-            document.getElementById('syncStatus').innerText = text;
-        }
+        function updateSyncStatus(text) { document.getElementById('syncStatus').innerText = text; }
 
         async function save() { 
             localStorage.setItem('media_v1', JSON.stringify(items)); 
@@ -128,14 +128,14 @@
         }
 
         async function syncToCloud() {
-            updateSyncStatus("Uploading...");
+            updateSyncStatus("Syncing...");
             try {
                 await fetch(`https://api.github.com/gists/${cloudConfig.gistId}`, {
                     method: "PATCH",
                     headers: { "Authorization": `token ${cloudConfig.token}` },
                     body: JSON.stringify({ files: { "vault.json": { content: JSON.stringify(items) } } })
                 });
-                updateSyncStatus("Cloud Synced");
+                updateSyncStatus("Synced");
             } catch (e) { updateSyncStatus("Offline"); }
         }
 
@@ -223,40 +223,34 @@
                 if (list.length === 0 && !query) return;
 
                 const isCollapsed = collapsedSections[key];
+                const chevron = isCollapsed ? '▲' : '▼';
+                
                 let h = `<section>
-                    <button onclick="toggleSection('${key}')" class="flex items-center w-full gap-4 mb-4 group">
-                        <h2 class="text-[11px] font-black tracking-[0.4em] text-slate-500 italic group-hover:text-sky-400 transition-colors">${label}</h2>
-                        <div class="h-px flex-1 bg-gradient-to-r from-slate-800 to-transparent"></div>
-                        <span class="text-[10px] text-slate-700 font-bold uppercase tracking-widest">${isCollapsed ? 'Expand' : 'Collapse'}</span>
+                    <button onclick="toggleSection('${key}')" class="flex items-center w-full gap-4 mb-4 group text-left">
+                        <h2 class="text-[12px] font-black tracking-[0.5em] text-white uppercase italic group-hover:text-sky-300 transition-colors">
+                            ${label} <span class="ml-2 not-italic text-sky-400">${chevron}</span>
+                        </h2>
+                        <div class="h-px flex-1 bg-slate-700"></div>
                     </button>
                     <div class="space-y-6 ${isCollapsed ? 'hidden' : ''}">`;
                 
                 list.forEach(i => {
                     const sC = i.status === 'in progress' ? 'status-progress' : (i.status === 'done' ? 'status-done' : 'status-todo');
-                    h += `<div class="cat-${i.category} glow-${i.priority} p-6 rounded-r-2xl shadow-lg ${i.status === 'done' ? 'opacity-20 grayscale scale-[0.98]' : ''}"><div class="flex justify-between items-center gap-4"><div class="flex-1"><h3 class="font-black text-white text-lg uppercase tracking-tight flex items-center gap-2"><span contenteditable="true" onblur="updateField(${i.id}, 'title', this.innerText)" class="editable">${i.title}</span><span class="text-[12px] text-slate-400 font-mono italic ml-auto">${i.release}</span></h3><div class="flex gap-4 mt-3 items-center">
-                    <select onchange="updateField(${i.id}, 'priority', this.value)" class="priority-${i.priority} bg-transparent text-[11px] uppercase font-black tracking-widest cursor-pointer border-none p-0">
+                    h += `<div class="cat-${i.category} glow-${i.priority} p-6 rounded-r-2xl shadow-lg border-y border-r border-slate-800/50 ${i.status === 'done' ? 'opacity-30 grayscale scale-[0.98]' : ''}"><div class="flex justify-between items-center gap-4"><div class="flex-1"><h3 class="font-black text-white text-lg uppercase tracking-tight flex items-center gap-2"><span contenteditable="true" onblur="updateField(${i.id}, 'title', this.innerText)" class="editable">${i.title}</span><span class="text-[12px] text-slate-300 font-mono italic ml-auto">${i.release}</span></h3><div class="flex gap-4 mt-3 items-center">
+                    <select onchange="updateField(${i.id}, 'priority', this.value)" class="priority-${i.priority} bg-slate-900/80 text-[11px] uppercase font-black tracking-widest cursor-pointer px-2 py-1 rounded min-w-[100px]">
                         <option value="1" ${i.priority===1?'selected':''}>Immediate</option>
                         <option value="2" ${i.priority===2?'selected':''}>High</option>
                         <option value="3" ${i.priority===3?'selected':''}>Medium</option>
                         <option value="4" ${i.priority===4?'selected':''}>Low</option>
                     </select>
-                    <span class="text-[12px] text-sky-300/70 font-bold uppercase tracking-wider">${i.genre} • <span contenteditable="true" onblur="updateField(${i.id}, 'runtime', this.innerText)" class="editable">${i.runtime}</span></span></div></div><div class="text-right flex items-center gap-4"><span contenteditable="true" onblur="updateField(${i.id}, 'score', this.innerText)" class="font-mono font-black text-3xl tracking-tighter ${i.score >= 90 ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]' : 'text-sky-400'}">${i.score || '0'}</span><div class="flex flex-col items-end gap-3"><select onchange="const x = items.find(z=>z.id===${i.id}); x.status=this.value; save();" class="${sC} bg-black/60 text-[11px] font-black uppercase p-3 rounded-xl border cursor-pointer"><option value="to-do" ${i.status==='to-do'?'selected':''}>To-Do</option><option value="in progress" ${i.status==='in progress'?'selected':''}>In Progress</option><option value="done" ${i.status==='done'?'selected':''}>Done</option></select><button onclick="if(confirm('Expunge?')) { items=items.filter(z=>z.id!==${i.id}); save(); }" class="text-slate-500 hover:text-red-400 text-[10px] font-bold uppercase p-1">Expunge</button></div></div></div></div>`;
+                    <span class="text-[12px] text-sky-200 font-bold uppercase tracking-wider">${i.genre} • <span contenteditable="true" onblur="updateField(${i.id}, 'runtime', this.innerText)" class="editable">${i.runtime}</span></span></div></div><div class="text-right flex items-center gap-4"><span contenteditable="true" onblur="updateField(${i.id}, 'score', this.innerText)" class="font-mono font-black text-3xl tracking-tighter ${i.score >= 90 ? 'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'text-sky-400'}">${i.score || '0'}</span><div class="flex flex-col items-end gap-3"><select onchange="const x = items.find(z=>z.id===${i.id}); x.status=this.value; save();" class="${sC} text-[11px] font-black uppercase p-3 rounded-xl border-2 cursor-pointer shadow-md min-w-[110px]"><option value="to-do" ${i.status==='to-do'?'selected':''}>To-Do</option><option value="in progress" ${i.status==='in progress'?'selected':''}>In Progress</option><option value="done" ${i.status==='done'?'selected':''}>Done</option></select><button onclick="if(confirm('Expunge?')) { items=items.filter(z=>z.id!==${i.id}); save(); }" class="text-red-400 hover:text-red-200 text-[10px] font-black uppercase tracking-tighter p-1 bg-red-900/20 rounded">Expunge</button></div></div></div></div>`;
                 });
                 container.innerHTML += h + `</div></section>`;
             });
         }
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/v2/sw.js');
-            });
-        }
-
-        function toggleCompleted() { 
-            showAll = !showAll; 
-            document.getElementById('historyToggle').innerText = showAll ? "Hide History" : "Show History";
-            render(); 
-        }
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/v2/sw.js'); }); }
+        function toggleCompleted() { showAll = !showAll; render(); }
         function downloadData() { const b = new Blob([JSON.stringify(items)], {type: "application/json"}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `vault.json`; a.click(); }
         syncFromCloud();
         render();
