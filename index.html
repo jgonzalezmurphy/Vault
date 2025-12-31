@@ -21,29 +21,20 @@
         #status-log { font-family: monospace; font-size: 10px; color: #64748b; text-align: center; margin-top: 8px; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
         .syncing #vault-logo { animation: pulse 1s infinite; }
-        .sync-active { animation: pulse 1s infinite; background-color: #38bdf8 !important; }
-        .sync-success { background-color: #22c55e !important; }
     </style>
 </head>
 <body>
     <div class="max-w-3xl mx-auto pb-32" id="app-root">
         <header class="mb-6 flex justify-between items-end">
-            <div class="flex items-center gap-3">
-                <div>
-                    <h1 id="vault-logo" class="text-3xl font-black text-white italic tracking-tighter">VAULT</h1>
-                    <p class="text-slate-300 text-[10px] uppercase font-bold tracking-[0.2em]">Archive 2025</p>
-                </div>
-                <div id="cloud-indicator" class="w-2 h-2 rounded-full bg-slate-700 mt-1"></div>
+            <div>
+                <h1 id="vault-logo" class="text-3xl font-black text-white italic tracking-tighter">VAULT</h1>
+                <p class="text-slate-300 text-[10px] uppercase font-bold tracking-[0.2em]">Archive 2025</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="toggleCompleted()" class="text-white bg-slate-800 text-[10px] uppercase font-black px-3 py-1 rounded-full">History</button>
                 <button onclick="setupCloud()" class="text-sky-400 text-[10px] uppercase font-black px-3 py-1 bg-sky-900/20 rounded-full border border-sky-900/40">Cloud</button>
             </div>
         </header>
-
-        <div class="mb-6">
-            <input type="text" id="searchInput" oninput="render()" placeholder="Search Archive..." class="w-full bg-slate-900/60 border border-slate-700 p-4 rounded-xl text-white outline-none">
-        </div>
 
         <div class="glass p-5 rounded-3xl mb-12">
             <div class="grid grid-cols-1 gap-4">
@@ -61,7 +52,7 @@
                         <option value="4">Low</option>
                     </select>
                 </div>
-                <button id="add-btn" onclick="addItem()" class="bg-sky-500 py-4 rounded-xl font-black text-xs uppercase text-white shadow-lg active:scale-95 transition-transform">Add Entry</button>
+                <button onclick="addItem()" class="bg-sky-500 py-4 rounded-xl font-black text-xs uppercase text-white shadow-lg active:scale-95 transition-transform">Add Entry</button>
                 <div id="status-log">System Ready</div>
             </div>
         </div>
@@ -77,7 +68,7 @@
         const params = new URLSearchParams(hash);
         if (params.has('access_token')) {
             localStorage.setItem('igdb_token', params.get('access_token'));
-            history.replaceState(null, null, window.location.pathname + window.location.search);
+            window.location.hash = ""; 
         }
 
         let items = JSON.parse(localStorage.getItem('media_v1')) || [];
@@ -92,33 +83,26 @@
             localStorage.setItem('vault_collapsed', JSON.stringify(collapsed));
             render(); 
             if (cloudConfig.token && cloudConfig.gistId) {
-                const ind = document.getElementById('cloud-indicator');
-                ind.className = "w-2 h-2 rounded-full sync-active";
                 try {
-                    const res = await fetch(`https://api.github.com/gists/${cloudConfig.gistId}`, { 
+                    await fetch(`https://api.github.com/gists/${cloudConfig.gistId}`, { 
                         method: "PATCH", 
                         headers: { "Authorization": `token ${cloudConfig.token}` }, 
                         body: JSON.stringify({ files: { "vault.json": { content: JSON.stringify(items) } } }) 
                     });
-                    if(res.ok) {
-                        ind.className = "w-2 h-2 rounded-full sync-success";
-                        setTimeout(() => ind.className = "w-2 h-2 rounded-full bg-slate-700", 2000);
-                    }
-                } catch(e) { ind.className = "w-2 h-2 rounded-full bg-red-500"; }
+                } catch(e) {}
             }
         }
 
         async function pullFromCloud() {
             if (!cloudConfig.token || !cloudConfig.gistId) return;
-            logStatus("Cloud Pull...");
             try {
                 const res = await fetch(`https://api.github.com/gists/${cloudConfig.gistId}`, {
                     headers: { "Authorization": `token ${cloudConfig.token}` }
                 });
                 const data = await res.json();
                 const remote = JSON.parse(data.files["vault.json"].content);
-                if (remote) { items = remote; render(); logStatus("Sync Ready."); }
-            } catch(e) { logStatus("Offline."); }
+                if (remote) { items = remote; render(); }
+            } catch(e) {}
         }
 
         function setupCloud() {
@@ -131,22 +115,32 @@
             }
         }
 
-        async function addItem() {
-            const t = document.getElementById('title').value.trim();
-            const c = document.getElementById('category').value;
-            const p = document.getElementById('priority').value;
-            if (!t) return;
-            if (c === 'vidya' && !localStorage.getItem('igdb_token')) {
-                const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=`;
-                if(confirm("Authorize Twitch?")) window.location.href = authUrl;
-                return;
+        async function hltbSearchAggressive(originalTitle) {
+            // Clean title of non-alphanumeric (keep spaces)
+            const clean = originalTitle.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+            const words = clean.split(/\s+/);
+            
+            // Iterate backwards from full title to first word
+            for (let i = words.length; i > 0; i--) {
+                const query = words.slice(0, i).join(" ");
+                logStatus(`HLTB: ${query}...`);
+                try {
+                    const res = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://howlongtobeat.com/api/search')}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            searchType: "games", 
+                            searchTerms: query.split(" "), 
+                            searchPage: 1, size: 5, use_fuzzy: true 
+                        })
+                    });
+                    const d = await res.json();
+                    if (d.data?.[0]?.comp_main > 0) {
+                        return Math.round(d.data[0].comp_main / 3600) + 'h';
+                    }
+                } catch(e) { continue; }
             }
-            const newItem = { id: Date.now(), title: t, category: c, priority: parseInt(p), status: 'to-do', score: 0, genre: 'Pending', release: '2025', runtime: '--' };
-            items.push(newItem);
-            document.getElementById('title').value = '';
-            render();
-            await fetchMetadata(newItem); 
-            await save();
+            return '--';
         }
 
         async function fetchMetadata(item) {
@@ -155,39 +149,19 @@
                 if (item.category === 'vidya') {
                     const token = localStorage.getItem('igdb_token');
                     logStatus("IGDB Sync...");
-                    const q = `search "${item.title}"; fields name, rating, first_release_date, genres.name; limit 1;`;
+                    const igdbQuery = `search "${item.title}"; fields name, rating, first_release_date, genres.name; limit 1;`;
                     const r = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.igdb.com/v4/games')}`, {
                         method: 'POST',
                         headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${token}` },
-                        body: q
+                        body: igdbQuery
                     });
-                    if (r.status === 401) { localStorage.removeItem('igdb_token'); return; }
                     const d = await r.json();
                     if (d?.[0]) {
                         item.title = d[0].name;
                         item.score = d[0].rating ? Math.round(d[0].rating) : 0;
                         item.release = d[0].first_release_date ? new Date(d[0].first_release_date * 1000).getFullYear() : "2025";
                         item.genre = d[0].genres?.[0]?.name || "Game";
-                        
-                        // Robust HLTB Search
-                        try {
-                            const searchName = item.title.replace(/[^a-zA-Z0-0\s]/g, '');
-                            const hltb = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://howlongtobeat.com/api/search')}`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' },
-                                body: JSON.stringify({
-                                    searchType: "games",
-                                    searchTerms: searchName.split(" "),
-                                    searchPage: 1, size: 5,
-                                    use_fuzzy: true
-                                })
-                            });
-                            const hData = await hltb.json();
-                            if (hData.data?.[0]) {
-                                const best = hData.data.find(x => x.game_name.includes("Elden Ring")) || hData.data[0];
-                                item.runtime = best.comp_main > 0 ? Math.round(best.comp_main / 3600) + 'h' : '--';
-                            }
-                        } catch(e) { console.error("HLTB Fail"); }
+                        item.runtime = await hltbSearchAggressive(item.title);
                     }
                 } else {
                     logStatus("TMDB Sync...");
@@ -207,24 +181,39 @@
                 logStatus("Ready.");
             } catch (e) { logStatus("Sync Error."); }
             document.getElementById('app-root').classList.remove('syncing');
+            save();
+        }
+
+        function addItem() {
+            const t = document.getElementById('title').value.trim();
+            const c = document.getElementById('category').value;
+            const p = document.getElementById('priority').value;
+            if (!t) return;
+            if (c === 'vidya' && !localStorage.getItem('igdb_token')) {
+                const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=`;
+                if(confirm("Authorize Twitch?")) window.location.href = authUrl;
+                return;
+            }
+            const newItem = { id: Date.now(), title: t, category: c, priority: parseInt(p), status: 'to-do', score: 0, genre: 'Pending', release: '2025', runtime: '--' };
+            items.push(newItem);
+            document.getElementById('title').value = '';
             render();
+            fetchMetadata(newItem);
         }
 
         function render() {
             const container = document.getElementById('tables-container');
-            const searchFilter = document.getElementById('searchInput').value.toLowerCase();
             container.innerHTML = '';
             const cats = { vidya: '🎮 GAMES', movie: '🎥 CINEMA', tv: '📺 SERIES' };
             const pMap = { 1: 'Immediate', 2: 'High', 3: 'Medium', 4: 'Low' };
             Object.entries(cats).forEach(([key, label]) => {
-                let list = items.filter(i => i.category === key && i.title.toLowerCase().includes(searchFilter));
+                let list = items.filter(i => i.category === key);
                 if (!showAll) list = list.filter(i => i.status !== 'done');
                 list.sort((a, b) => a.priority - b.priority);
                 if (list.length === 0) return;
                 const isCol = collapsed[key];
                 let section = `<section>
-                    <div onclick="collapsed['${key}']=!collapsed['${key}']; save();" class="flex items-center gap-2 mb-4 cursor-pointer select-none">
-                        <svg class="w-3 h-3 text-white transition-transform ${isCol?'-rotate-90':''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M19 9l-7 7-7-7"/></svg>
+                    <div onclick="collapsed['${key}']=!collapsed['${key}']; save();" class="flex items-center gap-2 mb-4 cursor-pointer">
                         <h2 class="text-xs font-black tracking-widest text-white/60 uppercase">${label}</h2>
                     </div>
                     <div style="display:${isCol?'none':'block'}" class="space-y-4">`;
@@ -255,8 +244,6 @@
             });
         }
         function toggleCompleted() { showAll = !showAll; render(); }
-        
-        // Auto-pull on load
         pullFromCloud().then(() => render());
     </script>
 </body>
