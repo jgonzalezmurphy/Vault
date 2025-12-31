@@ -202,7 +202,7 @@
             document.getElementById('app-root').classList.add('syncing');
             try {
                 if (item.category === 'vidya') {
-                    // Engine 1: RAWG
+                    // Try RAWG
                     const r = await fetch(`https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(item.title)}&page_size=1`);
                     const d = await r.json();
                     
@@ -214,11 +214,11 @@
                         item.genre = g.genres?.[0]?.name || "Vidya";
                         item.runtime = g.playtime ? g.playtime + "h" : "N/A";
                     } else {
-                        // Engine 2: Wikipedia Fallback (CORS Friendly)
-                        const wiki = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(item.title.replace(/ /g, '_'))}`);
-                        const wD = await wiki.json();
-                        if (wD.title && !wD.title.includes("Not found")) {
-                            item.title = wD.title;
+                        // Wikipedia Fallback: Pulls basic info if RAWG is CORS-blocked
+                        const w = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(item.title.replace(/ /g, '_'))}`);
+                        const wData = await w.json();
+                        if (wData.title) {
+                            item.title = wData.title;
                             item.genre = "Game";
                         }
                     }
@@ -279,7 +279,8 @@
                 
                 list.forEach(i => {
                     const sC = i.status === 'in progress' ? 'status-progress' : (i.status === 'done' ? 'status-done' : 'status-todo');
-                    const ytSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(i.title)}+${i.category}+official+trailer`;
+                    // Simplified YouTube Search URL to prevent "Error Occurred"
+                    const ytSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(i.title + ' ' + (i.category === 'vidya' ? 'game' : i.category) + ' official trailer')}`;
                     
                     h += `
                     <div class="media-card card-${i.category} priority-bg-${i.priority} p-4 shadow-lg ${i.status === 'done' ? 'opacity-30' : ''}">
