@@ -30,41 +30,29 @@
             overflow-x: hidden; 
         }
         
-        /* Base Card Styling */
         .media-card { 
             position: relative;
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(12px);
             overflow: hidden;
         }
 
-        /* Category Ribbons (Top-Right Accent) */
-        .media-card::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 40px;
-            height: 40px;
-            clip-path: polygon(100% 0, 0 0, 100% 100%);
-            opacity: 0.6;
-        }
-        .card-movie::after { background: #ef4444; }
-        .card-tv::after { background: #10b981; }
-        .card-vidya::after { background: #fbbf24; }
+        .card-movie { border-left: 5px solid #ef4444; }
+        .card-tv { border-left: 5px solid #10b981; }
+        .card-vidya { border-left: 5px solid #fbbf24; }
 
-        /* Subtle Background Watermark Text */
         .category-watermark {
             position: absolute;
-            bottom: -10px;
+            top: -5px;
             right: 5px;
-            font-size: 4rem;
+            font-size: 3rem;
             font-weight: 900;
-            opacity: 0.03;
+            opacity: 0.05;
             pointer-events: none;
             font-style: italic;
             text-transform: uppercase;
+            z-index: 0;
         }
 
         .priority-1 { color: #f87171; font-weight: 900; } 
@@ -236,7 +224,7 @@
                         item.runtime = item.category === 'movie' ? detail.runtime + "m" : (detail.number_of_episodes || "0") + " eps";
                     }
                 }
-            } catch (e) { console.error("API Error"); }
+            } catch (e) { console.error("API Error", e); }
             document.getElementById('app-root').classList.remove('syncing');
         }
 
@@ -286,7 +274,7 @@
                     const sC = i.status === 'in progress' ? 'status-progress' : (i.status === 'done' ? 'status-done' : 'status-todo');
                     h += `
                     <div class="media-card card-${i.category} p-4 rounded-xl shadow-lg ${i.status === 'done' ? 'opacity-30 grayscale' : ''}">
-                        <div class="category-watermark">${key}</div>
+                        <div class="category-watermark">${key === 'vidya' ? 'GAMES' : key}</div>
                         
                         <div class="flex justify-between items-start mb-1 relative z-10">
                             <h3 class="font-black text-white text-base uppercase tracking-tight leading-tight pr-8">
