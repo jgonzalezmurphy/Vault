@@ -77,6 +77,14 @@
         
         @keyframes pulse-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         .syncing #vault-logo { animation: pulse-glow 1s ease-in-out infinite; }
+
+        #status-log {
+            font-family: monospace;
+            font-size: 10px;
+            color: #64748b;
+            text-align: center;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -113,6 +121,7 @@
                     </select>
                 </div>
                 <button onclick="addItem()" class="bg-sky-500 py-4 rounded-xl font-black text-xs uppercase text-white">Add Entry</button>
+                <div id="status-log">System Ready</div>
             </div>
         </div>
 
@@ -126,6 +135,10 @@
         let items = JSON.parse(localStorage.getItem('media_v1')) || [];
         let showAll = false;
         let cloudConfig = JSON.parse(localStorage.getItem('vault_cloud')) || { token: '', gistId: '' };
+
+        function logStatus(msg) {
+            document.getElementById('status-log').innerText = msg;
+        }
 
         async function save() { 
             localStorage.setItem('media_v1', JSON.stringify(items)); 
@@ -165,18 +178,27 @@
             document.getElementById('app-root').classList.add('syncing');
             try {
                 if (item.category === 'vidya') {
-                    // Pulling EXACT logic from provided old code for Vidya
-                    const r = await fetch(`https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(item.title)}&page_size=1`);
+                    logStatus(`Searching RAWG for ${item.title}...`);
+                    const url = `https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(item.title)}&search_precise=true&page_size=1&_=${Date.now()}`;
+                    
+                    const r = await fetch(url, {
+                        mode: 'cors',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    
                     const d = await r.json();
-                    if (d.results?.[0]) {
+                    if (d.results && d.results.length > 0) {
                         const g = d.results[0];
                         item.title = g.name;
                         item.score = g.metacritic || (g.rating ? Math.round(g.rating * 20) : 0);
                         item.release = g.released?.split('-')[0] || "---";
                         item.genre = g.genres?.[0]?.name || "Game";
+                        logStatus("Game Data Found.");
+                    } else {
+                        logStatus("No exact game match.");
                     }
                 } else {
-                    // Restored original simple TMDB logic
+                    logStatus(`Searching TMDB for ${item.title}...`);
                     const r = await fetch(`https://api.themoviedb.org/3/search/${item.category}?api_key=${TMDB_KEY}&query=${encodeURIComponent(item.title)}`);
                     const d = await r.json();
                     if (d.results?.[0]) {
@@ -185,9 +207,31 @@
                         item.release = (m.release_date || m.first_air_date || "").split('-')[0];
                         item.score = Math.round(m.vote_average * 10);
                         item.genre = item.category.toUpperCase();
+                        logStatus("Media Data Found.");
                     }
                 }
-            } catch (e) { console.error("Fetch failed"); }
+            } catch (e) { 
+                logStatus("Direct Fetch Blocked. Trying Fallback...");
+                if (item.category === 'vidya') {
+                   try {
+                       const fallbackUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${item.title}&page_size=1`)}`;
+                       const res = await fetch(fallbackUrl);
+                       const data = await res.json();
+                       const g = JSON.parse(data.contents).results[0];
+                       if (g) {
+                           item.title = g.name;
+                           item.score = g.metacritic || 0;
+                           item.release = g.released?.split('-')[0] || "---";
+                           item.genre = g.genres?.[0]?.name || "Game";
+                           logStatus("Fallback Success.");
+                       } else {
+                           logStatus("Fallback failed to find data.");
+                       }
+                   } catch(err) {
+                       logStatus("All methods failed.");
+                   }
+                }
+            }
             document.getElementById('app-root').classList.remove('syncing');
             render();
         }
