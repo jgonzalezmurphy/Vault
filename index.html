@@ -15,17 +15,7 @@
         :root { --bg: #e6faff; }
         body { background-color: var(--bg) !important; color: #1e293b; font-family: 'Inter', sans-serif; margin: 0; padding: 1rem; min-height: 100vh; }
         
-        h2 { 
-            color: #000000 !important; 
-            font-weight: 950 !important; 
-            text-transform: uppercase; 
-            letter-spacing: 0.12em; 
-            font-size: 1.2rem !important; 
-            line-height: 1; 
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-            display: block;
-        }
+        h2 { color: #000000 !important; font-weight: 950 !important; text-transform: uppercase; letter-spacing: 0.12em; font-size: 1.2rem !important; line-height: 1; margin-top: 2rem; margin-bottom: 1rem; display: block; }
 
         .media-card { position: relative; border: 1px solid rgba(255, 255, 255, 0.4); backdrop-filter: blur(20px); border-radius: 12px; overflow: hidden; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .priority-bg-1 { background: linear-gradient(135deg, rgba(153, 27, 27, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); }
@@ -91,7 +81,10 @@
     <script>
         if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 
-        const TMDB_KEY = "f8baa5b950fb92e47e7250e9faaa2a5c", CLIENT_ID = "8bjq7bqv85pvclvbdlo4ocgff060tp";
+        const TMDB_KEY = "f8baa5b950fb92e47e7250e9faaa2a5c";
+        const CLIENT_ID = "8bjq7bqv85pvclvbdlo4ocgff060tp";
+        const CLIENT_SECRET = "rxwdetly09vb5pq41mx5ola1k1w2rm";
+
         let items = JSON.parse(localStorage.getItem('media_v1')) || [], 
             collapsed = JSON.parse(localStorage.getItem('vault_collapsed')) || {}, 
             cloudConfig = JSON.parse(localStorage.getItem('vault_cloud')) || { token: '', gistId: '' }, 
@@ -136,6 +129,24 @@
             } catch(e) { logStatus(e.name === 'AbortError' ? "Sync Timeout" : "Sync Error"); }
         }
 
+        async function refreshIGDBToken() {
+            logStatus("Generating IGDB Token...");
+            try {
+                const res = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://id.twitch.tv/oauth2/token')}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&grant_type=client_credentials`
+                });
+                const data = await res.json();
+                if (data.access_token) {
+                    localStorage.setItem('igdb_token', data.access_token);
+                    logStatus("IGDB Token Updated");
+                    return data.access_token;
+                }
+            } catch(e) { logStatus("Token Refresh Failed"); }
+            return null;
+        }
+
         async function hltbSearchAggressive(originalTitle) {
             const clean = originalTitle.replace(/[^a-zA-Z0-9\s]/g, '').trim(), words = clean.split(/\s+/);
             for (let i = words.length; i > 0; i--) {
@@ -152,16 +163,28 @@
             document.getElementById('app-root').classList.add('syncing');
             try {
                 if (item.category === 'vidya') {
-                    const token = localStorage.getItem('igdb_token');
-                    if (!token) { logStatus("Missing IGDB Token"); return; }
-                    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.igdb.com/v4/games')}`, { method: 'POST', headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${token}` }, body: `search "${item.title}"; fields name, rating, first_release_date, genres.name; limit 1;` });
+                    let token = localStorage.getItem('igdb_token');
+                    if (!token) token = await refreshIGDBToken();
+                    
+                    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.igdb.com/v4/games')}`, { 
+                        method: 'POST', 
+                        headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${token}` }, 
+                        body: `fields name, total_rating, first_release_date, genres.name; search "${item.title}"; limit 1;` 
+                    });
+                    
+                    if (r.status === 401) { // Token expired
+                        token = await refreshIGDBToken();
+                        return fetchMetadata(item); // Retry once
+                    }
+
                     const d = await r.json();
                     if (d?.[0]) { 
-                        item.title = d[0].name; item.score = d[0].rating ? Math.round(d[0].rating) : 0; 
+                        item.title = d[0].name; 
+                        item.score = d[0].total_rating ? Math.round(d[0].total_rating) : 0; 
                         item.release = d[0].first_release_date ? new Date(d[0].first_release_date * 1000).getFullYear() : "2026"; 
                         item.genre = d[0].genres?.[0]?.name || "Game"; 
                         item.runtime = await hltbSearchAggressive(item.title); 
-                    }
+                    } else { logStatus("Game Not Found"); }
                 } else {
                     const r = await fetch(`https://api.themoviedb.org/3/search/${item.category}?api_key=${TMDB_KEY}&query=${encodeURIComponent(item.title)}`);
                     const d = await r.json();
@@ -188,13 +211,15 @@
         async function setupCloud() {
             const gt = prompt("GitHub Token:", cloudConfig.token);
             const gi = prompt("Gist ID:", cloudConfig.gistId);
-            const it = prompt("IGDB Token (to restore Games search):", localStorage.getItem('igdb_token') || "");
             
             if (gt !== null && gi !== null) { 
                 cloudConfig = { token: gt, gistId: gi }; 
                 localStorage.setItem('vault_cloud', JSON.stringify(cloudConfig)); 
-                if (it) localStorage.setItem('igdb_token', it);
                 await pullFromCloud();
+            }
+
+            if (confirm("Generate a fresh IGDB token for Games search?")) {
+                await refreshIGDBToken();
             }
         }
 
