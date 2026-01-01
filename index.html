@@ -8,6 +8,7 @@
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
+    <link rel="shortcut icon" href="icon.png" type="image/png">
     <link rel="icon" type="image/png" href="icon.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,7 +16,6 @@
         :root { --bg: #e6faff; }
         body { background-color: var(--bg) !important; color: #1e293b; font-family: 'Inter', sans-serif; margin: 0; padding: 1rem; min-height: 100vh; }
         
-        /* High Contrast Category Headers - Fixed Syntax */
         h2 { 
             color: #000000 !important; 
             font-weight: 950 !important; 
@@ -40,7 +40,6 @@
         .category-watermark { position: absolute; top: 2px; right: 8px; font-size: 2.8rem; font-weight: 950; opacity: 0.1; pointer-events: none; font-style: italic; text-transform: uppercase; z-index: 0; line-height: 1; color: white; }
         .glass { background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
         
-        /* Status Log updated to White */
         #status-log { font-family: monospace; font-size: 10px; color: #ffffff !important; text-align: center; margin-top: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; }
         
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } }
@@ -125,7 +124,7 @@
             try {
                 if (item.category === 'vidya') {
                     const token = localStorage.getItem('igdb_token');
-                    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.igdb.com/v4/games')}`, { method: 'POST', headers: { 'Content-ID': CLIENT_ID, 'Authorization': `Bearer ${token}` }, body: `search "${item.title}"; fields name, rating, first_release_date, genres.name; limit 1;` });
+                    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.igdb.com/v4/games')}`, { method: 'POST', headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${token}` }, body: `search "${item.title}"; fields name, rating, first_release_date, genres.name; limit 1;` });
                     const d = await r.json();
                     if (d?.[0]) { item.title = d[0].name; item.score = d[0].rating ? Math.round(d[0].rating) : 0; item.release = d[0].first_release_date ? new Date(d[0].first_release_date * 1000).getFullYear() : "2026"; item.genre = d[0].genres?.[0]?.name || "Game"; item.runtime = await hltbSearchAggressive(item.title); }
                 } else {
