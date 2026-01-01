@@ -22,10 +22,11 @@
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
         .syncing #vault-logo { animation: pulse 1s infinite; }
         
+        .notes-trigger { font-size: 9px; font-weight: 900; color: #38bdf8; letter-spacing: 0.1em; cursor: pointer; margin-top: 12px; display: block; }
         .notes-area { 
-            background: rgba(0,0,0,0.3); 
-            border: 1px solid rgba(255,255,255,0.05); 
-            color: #94a3b8; 
+            background: rgba(0,0,0,0.4); 
+            border: 1px solid rgba(255,255,255,0.08); 
+            color: #cbd5e1; 
             font-size: 11px; 
             width: 100%; 
             border-radius: 6px; 
@@ -34,13 +35,15 @@
             resize: none; 
             overflow: hidden;
             height: 0;
-            transition: padding 0.2s, margin 0.2s;
+            opacity: 0;
+            transition: all 0.2s ease-out;
         }
         .notes-area:focus, .notes-area:not(:placeholder-shown) {
             height: auto;
-            min-height: 40px;
-            padding: 8px;
-            margin-top: 12px;
+            min-height: 50px;
+            padding: 10px;
+            margin-top: 6px;
+            opacity: 1;
         }
     </style>
 </head>
@@ -85,13 +88,6 @@
         const CLIENT_ID = "8bjq7bqv85pvclvbdlo4ocgff060tp";
         const REDIRECT_URI = "https://jgonzalezmurphy.github.io/v2/";
 
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        if (params.has('access_token')) {
-            localStorage.setItem('igdb_token', params.get('access_token'));
-            window.location.hash = ""; 
-        }
-
         let items = JSON.parse(localStorage.getItem('media_v1')) || [];
         let collapsed = JSON.parse(localStorage.getItem('vault_collapsed')) || {};
         let cloudConfig = JSON.parse(localStorage.getItem('vault_cloud')) || { token: '', gistId: '' };
@@ -111,28 +107,6 @@
                         body: JSON.stringify({ files: { "vault.json": { content: JSON.stringify(items) } } }) 
                     });
                 } catch(e) {}
-            }
-        }
-
-        async function pullFromCloud() {
-            if (!cloudConfig.token || !cloudConfig.gistId) return;
-            try {
-                const res = await fetch(`https://api.github.com/gists/${cloudConfig.gistId}`, {
-                    headers: { "Authorization": `token ${cloudConfig.token}` }
-                });
-                const data = await res.json();
-                const remote = JSON.parse(data.files["vault.json"].content);
-                if (remote) { items = remote; render(); }
-            } catch(e) {}
-        }
-
-        function setupCloud() {
-            const token = prompt("GitHub Token:", cloudConfig.token);
-            const gistId = prompt("Gist ID:", cloudConfig.gistId);
-            if (token && gistId) {
-                cloudConfig = { token, gistId };
-                localStorage.setItem('vault_cloud', JSON.stringify(cloudConfig));
-                pullFromCloud();
             }
         }
 
@@ -184,9 +158,17 @@
                         item.title = m.title || m.name;
                         item.score = Math.round(m.vote_average * 10);
                         item.release = (m.release_date || m.first_air_date || "").split('-')[0];
+                        
+                        if (item.category === 'movie') {
+                            item.runtime = det.runtime ? det.runtime + 'm' : '--';
+                        } else {
+                            // TV Logic: Use Season/Episode count if duration per episode is missing
+                            const eps = det.number_of_episodes;
+                            const seasons = det.number_of_seasons;
+                            const dur = det.episode_run_time?.[0];
+                            item.runtime = dur ? `${dur}m` : (seasons ? `S${seasons} • ${eps}ep` : '--');
+                        }
                         item.genre = item.category.toUpperCase();
-                        let rt = item.category === 'movie' ? det.runtime : det.episode_run_time?.[0];
-                        item.runtime = rt ? rt + 'm' : '--';
                     }
                 }
                 logStatus("Ready.");
@@ -200,11 +182,6 @@
             const c = document.getElementById('category').value;
             const p = document.getElementById('priority').value;
             if (!t) return;
-            if (c === 'vidya' && !localStorage.getItem('igdb_token')) {
-                const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=`;
-                if(confirm("Authorize Twitch?")) window.location.href = authUrl;
-                return;
-            }
             const newItem = { id: Date.now(), title: t, category: c, priority: parseInt(p), status: 'to-do', score: 0, genre: 'Pending', release: '2025', runtime: '--', notes: '' };
             items.push(newItem);
             document.getElementById('title').value = '';
@@ -216,10 +193,7 @@
             el.style.height = 'inherit';
             el.style.height = el.scrollHeight + 'px';
             const item = items.find(i => i.id === id);
-            if (item) {
-                item.notes = el.value;
-                localStorage.setItem('media_v1', JSON.stringify(items));
-            }
+            if (item) { item.notes = el.value; localStorage.setItem('media_v1', JSON.stringify(items)); }
         }
 
         function render() {
@@ -239,6 +213,7 @@
                     </div>
                     <div style="display:${isCol?'none':'block'}" class="space-y-4">`;
                 list.forEach(i => {
+                    const hasNotes = i.notes && i.notes.length > 0;
                     section += `
                     <div class="media-card card-${key} priority-bg-${i.priority} p-4">
                         <div class="category-watermark">${key}</div>
@@ -249,13 +224,17 @@
                             </div>
                             <span class="font-mono text-xl text-sky-400 font-black">${i.score}</span>
                         </div>
+                        
+                        <label class="notes-trigger relative z-10" onclick="document.getElementById('note-${i.id}').focus()">NOTES +</label>
                         <textarea 
+                            id="note-${i.id}"
                             class="notes-area relative z-10" 
-                            placeholder="Add notes..." 
+                            placeholder="Add your notes here..." 
                             oninput="autoExpand(this, ${i.id})"
                             onblur="save()"
-                            style="${i.notes ? 'height:auto; min-height:40px; padding:8px; margin-top:12px;' : ''}"
+                            style="${hasNotes ? 'height:auto; min-height:50px; padding:10px; margin-top:6px; opacity:1;' : ''}"
                         >${i.notes || ''}</textarea>
+
                         <div class="flex gap-2 mt-4 relative z-10">
                             <select onchange="items.find(x=>x.id===${i.id}).priority=parseInt(this.value); save();" class="text-[10px] font-black uppercase px-2 py-2 rounded bg-black/40 text-white border border-white/10 outline-none">
                                 ${Object.entries(pMap).map(([v, t]) => `<option value="${v}" ${i.priority==v?'selected':''}>${t}</option>`).join('')}
@@ -272,7 +251,7 @@
             });
         }
         function toggleCompleted() { showAll = !showAll; render(); }
-        pullFromCloud().then(() => render());
+        render();
     </script>
 </body>
 </html>
