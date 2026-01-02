@@ -10,15 +10,15 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='black'/><text y='75' x='20' font-family='Arial' font-weight='bold' font-size='80' fill='white'>V</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --bg: #e6faff; --text: #000000; --header: #000000; --card-border: rgba(0,0,0,0.3); --glass: rgba(15, 23, 42, 0.98); --notes-btn: #0284c7; --trailer-bg: rgba(255,255,255,0.5); }
-        body.dark-mode { --bg: #020617; --text: #cbd5e1; --header: #ffffff; --card-border: rgba(255,255,255,0.1); --glass: rgba(0, 0, 0, 0.95); --notes-btn: #38bdf8; --trailer-bg: rgba(255,255,255,0.15); }
+        :root { --bg: #e6faff; --text: #000000; --header: #000000; --card-border: rgba(0,0,0,0.3); --glass: rgba(15, 23, 42, 0.98); --notes-btn: #0284c7; }
+        body.dark-mode { --bg: #020617; --text: #cbd5e1; --header: #ffffff; --card-border: rgba(255,255,255,0.1); --glass: rgba(0, 0, 0, 0.95); --notes-btn: #38bdf8; }
         body { background-color: var(--bg) !important; color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 1rem; min-height: 100vh; transition: background 0.3s; }
         
-        .vault-logo { font-size: 2.5rem; font-weight: 1000; color: var(--header) !important; font-style: italic; letter-spacing: -0.07em; line-height: 1; text-transform: uppercase; }
+        .vault-logo { font-size: 2.5rem; font-weight: 1000; color: var(--header) !important; font-style: italic; letter-spacing: -0.07em; line-height: 1; text-transform: uppercase; cursor: pointer; user-select: none; }
         h2 { color: var(--header) !important; font-weight: 950 !important; text-transform: uppercase; letter-spacing: 0.15em; font-size: 1.1rem !important; margin-top: 1.8rem; margin-bottom: 0.8rem; }
         
-        .media-card { position: relative; border: 1px solid var(--card-border); backdrop-filter: blur(20px); border-radius: 12px; overflow: hidden; margin-bottom: 0.75rem; box-shadow: 0 6px 15px rgba(0,0,0,0.25); }
-        .glass { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .media-card { position: relative; border: 1px solid var(--card-border); backdrop-filter: blur(20px); border-radius: 12px; overflow: hidden; margin-bottom: 0.75rem; box-shadow: 0 6px 15px rgba(0,0,0,0.25); z-index: 10; }
+        .glass { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 50; }
         
         .priority-bg-1 { background: linear-gradient(135deg, #b91c1c 0%, #0f172a 100%); }
         .priority-bg-2 { background: linear-gradient(135deg, #b45309 0%, #0f172a 100%); }
@@ -28,9 +28,9 @@
         .card-vidya { border-left: 6px solid #fbbf24; } .card-movie { border-left: 6px solid #ef4444; } .card-tv { border-left: 6px solid #10b981; }
         .category-watermark { position: absolute; top: -5px; right: 40px; font-size: 1.8rem; font-weight: 950; opacity: 0.15; pointer-events: none; font-style: italic; text-transform: uppercase; z-index: 0; color: white; }
         
-        #live-results { position: absolute; top: 100%; left: 0; right: 0; background: #0f172a; border: 2px solid #334155; border-top: none; border-radius: 0 0 12px 12px; z-index: 100; max-height: 350px; overflow-y: auto; display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        #live-results { position: absolute; top: 100%; left: 0; right: 0; background: #020617; border: 2px solid #3b82f6; border-top: none; border-radius: 0 0 12px 12px; z-index: 1000; max-height: 350px; overflow-y: auto; display: none; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
         #live-results.active { display: block; }
-        .live-item { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; color: white; display: flex; align-items: center; gap: 12px; }
+        .live-item { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; color: white; display: flex; align-items: center; gap: 12px; }
         .live-item:hover { background: #1e293b; }
         .live-img { width: 40px; height: 55px; object-fit: cover; border-radius: 4px; background: #334155; flex-shrink: 0; }
 
@@ -41,7 +41,7 @@
         .notes-area { background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.4); color: #ffffff; font-size: 12px; width: 100%; border-radius: 6px; outline: none; resize: none; overflow: hidden; height: 0; opacity: 0; transition: all 0.2s; }
         .notes-area.active { height: auto; min-height: 45px; padding: 10px; margin-top: 10px; opacity: 1; }
         
-        #settings-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        #settings-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         #settings-menu.active { display: flex; }
     </style>
 </head>
@@ -53,7 +53,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path><polyline points="22 4 22 10 16 10"></polyline></svg>
                 </div>
                 <div>
-                    <h1 class="vault-logo">VAULT</h1>
+                    <h1 class="vault-logo" onclick="toggleTheme()">VAULT</h1>
                     <p class="text-[10px] uppercase font-[1000] tracking-[0.25em] text-black dark:text-white">Archive 2026</p>
                 </div>
             </div>
@@ -64,7 +64,7 @@
 
         <input id="global-search" type="text" class="thin-search" placeholder="FILTER VAULT..." oninput="render()">
 
-        <div class="glass p-5 rounded-3xl mb-10 shadow-2xl relative">
+        <div class="glass p-5 rounded-3xl mb-10 shadow-2xl">
             <div class="grid grid-cols-1 gap-4">
                 <div class="relative">
                     <input id="title" type="text" autocomplete="off" placeholder="Entry Title..." oninput="debounceSearch()" class="bg-black/60 border border-white/20 p-4 rounded-xl text-white w-full outline-none placeholder-white/60 font-bold">
@@ -132,7 +132,7 @@
                     const r = await fetch(`https://api.themoviedb.org/3/search/${cat}?api_key=${TMDB_KEY}&query=${encodeURIComponent(title)}`);
                     const d = await r.json(); if(d.results) results = d.results.map(m => ({ title: m.title || m.name, year: (m.release_date || m.first_air_date || 'TBA').split('-')[0], id: m.id, img: m.poster_path ? `https://image.tmdb.org/t/p/w92${m.poster_path}` : '' }));
                 }
-                dropdown.innerHTML = results.length ? '' : '<div class="p-3 text-xs text-white/50">No results found.</div>';
+                dropdown.innerHTML = `<div onclick="finalizeAdd('${title.replace(/'/g, "\\'")}', '2026', 0, 'Custom', '--')" class="live-item text-blue-400 italic text-xs font-black">USE RAW: "${title}"</div>`;
                 results.forEach(res => {
                     const el = document.createElement('div'); el.className = 'live-item';
                     el.innerHTML = `<img src="${res.img || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='}" class="live-img"><div><div class="font-bold text-sm">${res.title}</div><div class="text-[10px] opacity-50">${res.year}</div></div>`;
